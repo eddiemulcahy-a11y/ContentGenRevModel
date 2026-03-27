@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;color:#0f172a;padding:20px}
+.wrap{max-width:1100px;margin:0 auto}
+h1{font-size:20px;font-weight:800}
+.sub{font-size:10px;color:#64748b;margin-top:2px}
+.warn{font-size:10px;color:#ef4444;font-weight:700;margin-top:2px}
+.tabs{display:flex;gap:6px;margin:14px 0}
+.tab{padding:7px 14px;border-radius:6px;border:1px solid #dde3ea;background:#fff;color:#64748b;font-weight:700;font-size:11px;cursor:pointer}
+.tab.active{border:2px solid #0d9488;background:#0d948810;color:#0d9488}
+.scen{display:flex;gap:5px;flex-wrap:wrap}
+.sbtn{padding:4px 10px;border-radius:5px;border:1px solid #dde3ea;background:#fff;font-weight:700;font-size:10px;cursor:pointer}
+.sbtn.active-c{border:2px solid #6366f1;background:#6366f115;color:#6366f1}
+.sbtn.active-b{border:2px solid #0d9488;background:#0d948815;color:#0d9488}
+.sbtn.active-a{border:2px solid #f59e0b;background:#f59e0b15;color:#f59e0b}
+.grid{display:grid;gap:8px;margin-bottom:14px}
+.g6{grid-template-columns:repeat(auto-fit,minmax(148px,1fr))}
+.g2{grid-template-columns:1fr 1fr}
+.card{background:#fff;border:1px solid #dde3ea;border-radius:8px;padding:12px 14px}
+.card-t{border-top:3px solid #0d9488}
+.card-r{border-top:3px solid #ef4444}
+.card-g{border-top:3px solid #059669}
+.card-o{border-top:3px solid #f59e0b}
+.lbl{font-size:9px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+.val{font-size:17px;font-weight:800}
+.val-r{color:#ef4444}.val-g{color:#059669}
+.sm{font-size:9px;color:#64748b;margin-top:1px}
+.sec{font-size:9px;font-weight:700;letter-spacing:2px;color:#64748b;text-transform:uppercase;margin-bottom:8px}
+table{width:100%;border-collapse:collapse;font-size:10px}
+th{background:#0f172a;color:#fff;padding:6px 5px;text-align:right;font-size:9px}
+td{padding:5px;text-align:right;border-bottom:1px solid #eee}
+tr:nth-child(even){background:#f8fafc}
+.pos{color:#059669}.neg{color:#ef4444}.bold{font-weight:700}
+.alert{border-radius:8px;padding:12px;margin-top:14px;font-size:10px;line-height:1.6}
+.alert-r{background:#fef2f2;border:1px solid #fca5a5;color:#991b1b}
+.alert-y{background:#fffbeb;border:1px solid #fbbf24;color:#78350f}
+.alert-g{background:#f0fdf4;border:1px solid #86efac;color:#166534}
+.bar-wrap{display:flex;align-items:flex-end;gap:3px;height:100px}
+.bar-col{flex:1;text-align:center;display:flex;flex-direction:column;justify-content:flex-end}
+.bar-lbl{font-size:7px;color:#64748b}
+.bar-val{font-size:7px;font-weight:700;margin-bottom:1px}
+.legend{display:flex;gap:12px;justify-content:center;margin-top:6px}
+.leg-dot{width:10px;height:10px;border-radius:2px;display:inline-block}
+.leg-txt{font-size:9px;color:#64748b}
+.hdr{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.totrow{background:#0f172a !important;color:#fff;font-weight:700}
+.totrow td{color:#fff;border:none}
+</style>
+
+<div class="wrap" id="app"></div>
+
+<script>
+const MO=["Apr'26","May'26","Jun'26","Jul'26","Aug'26","Sep'26","Oct'26","Nov'26","Dec'26","Jan'27","Feb'27","Mar'27"];
+const ramps={conservative:[3,8,15,22,30,38,45,50,55,28,32,38],base:[5,12,25,40,55,65,75,82,90,45,52,60],aggressive:[8,20,40,60,80,95,110,120,130,70,80,90]};
+const cmoR={conservative:[0,0,1,2,3,3,4,4,5,3,3,4],base:[0,1,2,3,5,6,8,9,10,6,7,8],aggressive:[1,2,4,6,8,10,12,14,16,10,12,14]};
+
+let scenario="base",tab="summary";
+const P={annualPrice:6000,cmoPrice:3000,devTotal:60000,ga:13340,smktg:5000,hosting:15,churn:0.005,odigoSub:78000,subMo:3};
+let custRamp=[...ramps.base],cmoClients=[...cmoR.base];
+
+const fK=v=>Math.abs(v)>=1e6?`$${(v/1e6).toFixed(2)}M`:Math.abs(v)>=1000?`$${(v/1000).toFixed(1)}K`:`$${v.toFixed(0)}`;
+
+function calc(){
+  const mp=P.annualPrice/12,opex=P.devTotal+P.ga+P.smktg;
+  let cc=0,cash=0;
+  return MO.map((m,i)=>{
+    const nc=custRamp[i]||0,ch=i>0?Math.round(cc*P.churn):0;
+    cc+=nc-ch;
+    const mrr=cc*mp,svc=(cmoClients[i]||0)*P.cmoPrice,tot=mrr+svc,arr=mrr*12;
+    const cogs=cc*P.hosting,gp=tot-cogs,ebitda=gp-opex;
+    const sub=i<P.subMo?P.odigoSub:0;
+    cash+=tot-cogs-opex+sub;
+    return{month:m,nc,ch,cc,mrr,svc,tot,arr,cogs,gp,ebitda,cash,sub,gm:tot>0?gp/tot:0};
+  });
+}
+
+function setScenario(s){scenario=s;custRamp=[...ramps[s]];cmoClients=[...cmoR[s]];render();}
+function setTab(t){tab=t;render();}
+
+function render(){
+  const model=calc(),L=model[model.length-1],opex=P.devTotal+P.ga+P.smktg;
+  const tR=model.reduce((s,m)=>s+m.tot,0),tS=model.reduce((s,m)=>s+m.mrr,0),tSv=model.reduce((s,m)=>s+m.svc,0);
+  const tE=model.reduce((s,m)=>s+m.ebitda,0),beM=model.findIndex(m=>m.ebitda>=0);
+  const q1=model.slice(0,3),q1R=q1.reduce((s,m)=>s+m.tot,0),q1E=q1.reduce((s,m)=>s+m.ebitda,0);
+  const maxNeg=Math.min(...model.map(m=>m.cash));
+
+  let h=`<div class="hdr"><div><h1>ConteSaaS-AI Revenue Model v2</h1>
+    <div class="sub">Apr 2026–Mar 2027 | $${P.annualPrice.toLocaleString()}/yr SaaS + $${P.cmoPrice.toLocaleString()}/mo CMO | Scenario: ${scenario}</div>
+    <div class="warn">⚠️ $0 starting cash — Odigo subsidizing burn for ${P.subMo} months</div></div>
+    <div class="scen">
+      <button class="sbtn ${scenario==='conservative'?'active-c':''}" onclick="setScenario('conservative')">Conservative</button>
+      <button class="sbtn ${scenario==='base'?'active-b':''}" onclick="setScenario('base')">Base Case</button>
+      <button class="sbtn ${scenario==='aggressive'?'active-a':''}" onclick="setScenario('aggressive')">Aggressive</button>
+    </div></div>`;
+
+  h+=`<div class="tabs">
+    ${['summary','monthly','runway','marina'].map(t=>`<button class="tab ${tab===t?'active':''}" onclick="setTab('${t}')">${{summary:'Dashboard',monthly:'Monthly P&L',runway:'Cash & Runway',marina:'For Marina'}[t]}</button>`).join('')}</div>`;
+
+  if(tab==='summary'){
+    const cards=[
+      {l:'EOY SaaS Customers',v:L.cc.toLocaleString(),s:`Target: 481 | Gap: ${Math.max(0,481-L.cc)}`,c:L.cc>=400?'g':L.cc>=300?'o':'r'},
+      {l:'Exit ARR (SaaS)',v:fK(L.arr),s:`MRR: ${fK(L.mrr)}`},
+      {l:'12-Mo Total Revenue',v:fK(tR),s:`SaaS: ${fK(tS)} | CMO: ${fK(tSv)}`},
+      {l:'12-Mo EBITDA',v:fK(tE),c:tE<0?'r':'g',s:tE<0?'Net loss':'Profitable'},
+      {l:'Monthly OpEx',v:fK(opex),s:'Dev $60K + G&A $13.3K + S&M $5K'},
+      {l:'Break-Even',v:beM>=0?MO[beM]:'Not in range',c:beM>=0?'g':'r',s:beM>=0?`Month ${beM+1} of 12`:'Adjust ramp'}
+    ];
+    h+=`<div class="grid g6">${cards.map(c=>`<div class="card card-${c.c||'t'}"><div class="lbl">${c.l}</div><div class="val ${c.c==='r'?'val-r':c.c==='g'?'val-g':''}">${c.v}</div><div class="sm">${c.s}</div></div>`).join('')}</div>`;
+
+    // MRR chart
+    const maxR=Math.max(...model.map(x=>x.tot));
+    h+=`<div class="grid g2"><div class="card"><div class="sec">MRR + Services Growth</div><div class="bar-wrap">`;
+    model.forEach(m=>{
+      const hS=maxR>0?(m.mrr/maxR)*80:0,hC=maxR>0?(m.svc/maxR)*80:0;
+      h+=`<div class="bar-col"><div class="bar-val" style="color:#0f172a">${fK(m.tot)}</div><div style="height:${Math.max(hC,0)}px;background:#f59e0b;border-radius:3px 3px 0 0"></div><div style="height:${Math.max(hS,1)}px;background:#0d9488;border-radius:${hC>0?'0':'3px 3px'} 0 0"></div><div class="bar-lbl">${m.month}</div></div>`;
+    });
+    h+=`</div><div class="legend"><span><span class="leg-dot" style="background:#0d9488"></span> <span class="leg-txt">SaaS</span></span><span><span class="leg-dot" style="background:#f59e0b"></span> <span class="leg-txt">CMO</span></span></div></div>`;
+
+    // EBITDA chart
+    const maxAbs=Math.max(...model.map(x=>Math.abs(x.ebitda)));
+    h+=`<div class="card"><div class="sec">Monthly EBITDA</div><div class="bar-wrap">`;
+    model.forEach(m=>{
+      const ht=maxAbs>0?(Math.abs(m.ebitda)/maxAbs)*70:0;
+      const col=m.ebitda>=0?'#059669':'#ef4444';
+      h+=`<div class="bar-col"><div class="bar-val" style="color:${col}">${fK(m.ebitda)}</div><div style="height:${Math.max(ht,1)}px;background:${col}${m.ebitda<0?'99':''};border-radius:3px"></div><div class="bar-lbl">${m.month}</div></div>`;
+    });
+    h+=`</div></div></div>`;
+
+    // Q1 + Expenses
+    h+=`<div class="grid g2"><div class="card"><div class="sec">Q1 ConteSaaS (Apr–Jun '26)</div>
+      <div style="font-size:13px;font-weight:700">Revenue: ${fK(q1R)}</div>
+      <div style="font-size:13px;font-weight:700;color:${q1E<0?'#ef4444':'#059669'}">EBITDA: ${fK(q1E)}</div>
+      <div class="sm" style="margin-top:4px">Customers: ${q1[2].cc} by Jun | Q1 burn: ${fK(opex*3)}</div></div>
+    <div class="card"><div class="sec">Expense Breakdown (Corrected)</div>
+      <div style="font-size:10px;line-height:1.8"><b>Dev Team (total):</b> $60.0K <span style="color:#059669;font-size:8px">✅ Mike+Josh+Lars+FE+team</span><br/>
+      <b>G&A:</b> $13.3K <span style="color:#059669;font-size:8px">✅ Forecastr</span><br/>
+      <b>Sales & Mktg:</b> $5K <span style="color:#f59e0b;font-size:8px">⚠️ assumption</span><br/>
+      <b>Total: ${fK(opex)}/mo</b> (${fK(opex*12)}/yr)</div>
+      <div style="margin-top:6px;padding:6px;background:#fef3c7;border-radius:4px;font-size:9px;color:#92400e">Prior model showed $97K/mo — was double-counting. Corrected: Mike+Josh+Lars are part of the $60K total.</div></div></div>`;
+
+    // Valuation check
+    const combARR=L.arr+(cmoClients[11]||0)*P.cmoPrice*12;
+    h+=`<div class="alert alert-y"><b>$20M Valuation Check</b><br/>Exit ARR: ${fK(L.arr)} | + CMO annualized: ${fK((cmoClients[11]||0)*P.cmoPrice*12)} | Combined: ${fK(combARR)}<br/>At 7-10x forward revenue, $20M needs ~$2-2.9M ARR.<br/>`;
+    h+=L.arr>=2e6?`<b style="color:#059669">✅ SaaS ARR alone supports $20M at ~${(2e7/L.arr).toFixed(1)}x.</b>`:combARR>=2e6?`<b style="color:#f59e0b">⚠️ Need combined SaaS + services to approach defensible valuation.</b>`:`<b style="color:#ef4444">❌ Current ramp doesn't support $20M. Need faster acquisition or higher ARPU.</b>`;
+    h+=`</div>`;
+  }
+
+  if(tab==='monthly'){
+    h+=`<div style="overflow-x:auto"><table><thead><tr>`;
+    ['Month','New','Churn','Cust','SaaS MRR','CMO Rev','Total Rev','ARR','COGS','Gross','OpEx','EBITDA'].forEach(c=>h+=`<th>${c}</th>`);
+    h+=`</tr></thead><tbody>`;
+    model.forEach((m,i)=>{
+      h+=`<tr><td style="font-weight:700;text-align:left">${m.month}</td><td class="pos">+${m.nc}</td><td class="neg">${m.ch>0?'-'+m.ch:'—'}</td><td class="bold">${m.cc}</td><td>${fK(m.mrr)}</td><td style="color:#f59e0b">${m.svc>0?fK(m.svc):'—'}</td><td class="bold">${fK(m.tot)}</td><td style="color:#64748b">${fK(m.arr)}</td><td class="neg">${fK(m.cogs)}</td><td>${fK(m.gp)}</td><td style="color:#64748b">${fK(opex)}</td><td class="bold ${m.ebitda>=0?'pos':'neg'}">${fK(m.ebitda)}</td></tr>`;
+    });
+    h+=`<tr class="totrow"><td style="text-align:left">TOTAL</td><td>${model.reduce((s,m)=>s+m.nc,0)}</td><td>${model.reduce((s,m)=>s+m.ch,0)}</td><td></td><td>${fK(tS)}</td><td>${fK(tSv)}</td><td>${fK(tR)}</td><td></td><td>${fK(model.reduce((s,m)=>s+m.cogs,0))}</td><td></td><td>${fK(opex*12)}</td><td>${fK(tE)}</td></tr>`;
+    h+=`</tbody></table></div>`;
+  }
+
+  if(tab==='runway'){
+    const rcards=[
+      {l:'Starting Cash',v:'$0',s:'Odigo funding operations',c:'r'},
+      {l:'Odigo Subsidy',v:fK(P.odigoSub)+'/mo',s:`${P.subMo} months = ${fK(P.odigoSub*P.subMo)}`},
+      {l:'Max Cash Deficit',v:fK(maxNeg),s:'Lowest cash point',c:'r'},
+      {l:'Cash at Month 12',v:fK(L.cash),s:L.cash>=0?'Self-sustaining':'Still needs funding',c:L.cash>=0?'g':'r'}
+    ];
+    h+=`<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">${rcards.map(c=>`<div class="card card-${c.c||'t'}"><div class="lbl">${c.l}</div><div class="val ${c.c==='r'?'val-r':c.c==='g'?'val-g':''}">${c.v}</div><div class="sm">${c.s}</div></div>`).join('')}</div>`;
+
+    h+=`<div class="card" style="margin-top:10px"><div class="sec">Cumulative Cash Position</div><div style="overflow-x:auto"><table><thead><tr>`;
+    ['Month','Revenue','OpEx+COGS','Odigo Subsidy','Net Monthly','Cash Balance'].forEach(c=>h+=`<th>${c}</th>`);
+    h+=`</tr></thead><tbody>`;
+    model.forEach(m=>{
+      const net=m.tot-opex-m.cogs+m.sub;
+      h+=`<tr><td class="bold" style="text-align:left">${m.month}</td><td class="pos">${fK(m.tot)}</td><td class="neg">${fK(opex+m.cogs)}</td><td style="color:${m.sub>0?'#6366f1':'#64748b'}">${m.sub>0?fK(m.sub):'—'}</td><td class="bold ${net>=0?'pos':'neg'}">${fK(net)}</td><td class="bold ${m.cash>=0?'pos':'neg'}">${fK(m.cash)}</td></tr>`;
+    });
+    h+=`</tbody></table></div></div>`;
+    h+=`<div class="alert alert-r"><b>🔴 Critical: Funding Gap</b><br/>ConteSaaS has $0 cash. Odigo subsidizing ~${fK(P.odigoSub)}/mo for ${P.subMo} months (${fK(P.odigoSub*P.subMo)}).<br/>Max deficit: ${fK(maxNeg)}. ${L.cash>=0?`By month 12, recovers to ${fK(L.cash)}.`:`By month 12, still in deficit at ${fK(L.cash)}.`}</div>`;
+  }
+
+  if(tab==='marina'){
+    h+=`<div class="card" style="margin-bottom:14px"><div style="font-size:12px;font-weight:800;margin-bottom:8px">Forecastr Load Instructions — CORRECTED 3/27</div>
+    <div style="font-size:10px;color:#64748b;line-height:1.8">
+    <b style="color:#ef4444">🔴 CRITICAL CORRECTION:</b> The $18.99K "Odigo Tech PM" line already includes Mike, Josh, and Lars. Do NOT add $60K on top — that double-counts.<br/><br/>
+    <b style="color:#0f172a">WHAT NEEDS TO CHANGE IN FORECASTR:</b><br/>
+    1. <b>Add revenue stream:</b> "SaaS Subscriptions" — $500/customer/month<br/>
+    2. <b>Add revenue stream:</b> "Fractional CMO Services" — $3,000/client/month<br/>
+    3. <b>Load customer acquisition ramp</b> (see below)<br/>
+    4. <b>Add to Product Dev:</b> $37.8K/mo additional dev team ($60K total - $18.99K existing - $3.2K FE agency)<br/>
+    5. <b>Add COGS:</b> ~$15/customer/month hosting<br/>
+    6. <b>Add S&M:</b> ~$5K/mo<br/><br/>
+    <b style="color:#0f172a">CUSTOMER RAMP (${scenario}):</b><br/>${MO.map((m,i)=>`${m}: ${custRamp[i]}`).join(' | ')}<br/>
+    <b>CMO Clients:</b> ${MO.map((m,i)=>`${m}: ${cmoClients[i]}`).join(' | ')}<br/><br/>
+    <b style="color:#0f172a">VALIDATED:</b><br/>
+    ✅ $6K/yr SaaS — Christine confirmed 3/24<br/>
+    ✅ $60K/mo total dev — Eddie confirmed 3/27<br/>
+    ✅ $13.34K/mo G&A — Forecastr<br/>
+    ✅ $3.2K/mo FE agency — within $60K<br/>
+    ✅ $0 starting cash — Odigo funding<br/>
+    ⚠️ $3K/mo CMO services — Eddie provided, ramp is estimate<br/>
+    ⚠️ 0.5% monthly churn — enterprise default<br/>
+    ⚠️ $15/cust/mo hosting — SaaS estimate<br/>
+    ⚠️ $5K/mo S&M — placeholder</div></div>`;
+  }
+
+  document.getElementById('app').innerHTML=h;
+}
+render();
+</script>
