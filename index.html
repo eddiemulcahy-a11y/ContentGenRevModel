@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ContentGen® Revenue Model v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#f8fafc;color:#1f2933}#root{max-width:1020px;margin:0 auto;padding:16px 12px}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useMemo}=React;
+const B={db:"#0c0b74",mb:"#5b55ff",lb:"#43bdff",pu:"#6667aa",or:"#ff7814",wh:"#ffffff",dg:"#1f2933",mdg:"#525c66",mg:"#858f99",mlg:"#b8c2cc",lg:"#dae4ee",red:"#dc2626",grn:"#059669",cardBg:"#edf1f7",altRow:"#f3f7fb",warn:"#fef3c7",warnBd:"#fde68a",errBg:"#fef2f2",errBd:"#fecaca"};
+const MO=["Apr'26","May'26","Jun'26","Jul'26","Aug'26","Sep'26","Oct'26","Nov'26","Dec'26","Jan'27","Feb'27","Mar'27"];
+const MS=["Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar"];
+const SC={conservative:{l:"Conservative",c:350,dp:70,aa:20},base:{l:"Base Case",c:481,dp:70,aa:25},aggressive:{l:"Aggressive",c:650,dp:70,aa:30}};
+const HK=[2,3,4,5,7,9,11,14,16,18,20,22],HW=HK.reduce((a,b)=>a+b,0);
+const OPX={dev:60000,ga:13300,sm:5000},OPT=OPX.dev+OPX.ga+OPX.sm;
+const AG_START=6,AG_MO=1000;
+function rmp(t){let c=0;return HK.map((w,i)=>{const r=i===11?t-c:Math.round((w/HW)*t);c+=r;return r;});}
+function cum(a){let s=0;return a.map(v=>{s+=v;return s;});}
+const f$=n=>"$"+Math.round(n).toLocaleString();
+const fK=n=>n>=1e6?"$"+(n/1e6).toFixed(2)+"M":n>=1e3?"$"+(n/1e3).toFixed(1)+"K":"$"+Math.round(n);
+function App(){
+const[sc,setSc]=useState("base");
+const[tab,setTab]=useState("exec");
+const S=SC[sc];
+const d=useMemo(()=>{
+const tD=Math.round(S.c*S.dp/100),tA=S.c-tD;
+const nT=rmp(S.c),nD=rmp(tD),nA=nT.map((t,i)=>t-nD[i]);
+const cD=cum(nD),cA=cum(nA),cT=cum(nT);
+const agNew=nT.map((x,i)=>i<AG_START?0:(i===AG_START?Math.round(cT[i]*S.aa/100):Math.round(x*S.aa/100)));
+const cAg=cum(agNew);
+const dM=5500/12,aM=4000/12;
+const months=MO.map((_,i)=>{
+const sD=cD[i]*dM,sA=cA[i]*aM,sT=sD+sA,agR=cAg[i]*AG_MO,tR=sT+agR,gp=tR,eb=gp-OPT;
+return{sD,sA,sT,agR,tR,gp,eb,nD:nD[i],nA:nA[i],nT:nT[i],cD:cD[i],cA:cA[i],cT:cT[i],agNew:agNew[i],cAg:cAg[i]};
+});
+const sm=k=>months.reduce((a,m)=>a+m[k],0);
+const mar=months[11],be=months.findIndex(m=>m.eb>0);
+let cc=0;const cumCash=months.map(m=>{cc+=m.eb;return cc;});
+return{tD,tA,months,mar,be,cumCash,tSD:sm("sD"),tSA:sm("sA"),tS:sm("sT"),tAg:sm("agR"),tR:sm("tR"),tGP:sm("gp"),tEB:sm("eb"),arr:mar.tR*12,q1R:months.slice(0,3).reduce((a,m)=>a+m.tR,0),q1E:months.slice(0,3).reduce((a,m)=>a+m.eb,0),q1C:months[2].cT};
+},[sc]);
+const maxR=Math.max(...d.months.map(m=>m.tR));
+const maxE=Math.max(...d.months.map(m=>Math.abs(m.eb)));
+const maxN=Math.max(...d.months.map(m=>m.nT));
+const bH=140;
+const Cd=({l,v,s,c})=>(<div style={{background:B.cardBg,borderRadius:10,padding:"12px 14px",borderLeft:"5px solid "+(c||B.mb),minWidth:0}}><div style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:.8,color:B.mdg}}>{l}</div><div style={{fontSize:20,fontWeight:800,color:c||B.mb,marginTop:2,lineHeight:1.1}}>{v}</div>{s&&<div style={{fontSize:10,color:B.mg,marginTop:2}}>{s}</div>}</div>);
+const Sec=({title,children,bg})=>(<div style={{background:bg||B.cardBg,borderRadius:12,padding:16,marginBottom:14}}>{title&&<div style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:B.mdg,marginBottom:10}}>{title}</div>}{children}</div>);
+const tabs=[{id:"exec",l:"Executive Summary"},{id:"dashboard",l:"Dashboard"},{id:"monthly",l:"Monthly P&L"},{id:"cash",l:"Cash & Runway"},{id:"christine",l:"For Christine"},{id:"marina",l:"For Marina"}];
+const scData=useMemo(()=>Object.entries(SC).map(([k,s])=>{
+const tD2=Math.round(s.c*s.dp/100);const nT2=rmp(s.c),nD2=rmp(tD2);
+const cD2=cum(nD2),cA2=cum(nT2.map((t,i)=>t-nD2[i])),cT2=cum(nT2);
+const agNew2=nT2.map((x,i)=>i<AG_START?0:(i===AG_START?Math.round(cT2[i]*s.aa/100):Math.round(x*s.aa/100)));
+const cAg2=cum(agNew2);const dM2=5500/12,aM2=4000/12;
+const mos=MO.map((_,i)=>{const sT=cD2[i]*dM2+cA2[i]*aM2,agR=cAg2[i]*AG_MO,tR=sT+agR;return{tR,eb:tR-OPT};});
+const sm2=k2=>mos.reduce((a,m)=>a+m[k2],0);
+return{key:k,label:s.l,cust:s.c,aa:s.aa,tR:sm2("tR"),tEB:sm2("eb"),arr:mos[11].tR*12,be:mos.findIndex(m=>m.eb>0),agCl:cAg2[11]};
+}),[]);
+const th={padding:"6px 8px",textAlign:"left",fontSize:10,fontWeight:700,borderBottom:"2px solid "+B.mlg,whiteSpace:"nowrap",color:B.dg};
+const td={padding:"5px 8px",borderBottom:"1px solid "+B.lg,whiteSpace:"nowrap"};
+return(<div>
+{/* Header */}
+<div style={{marginBottom:14}}><div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:4}}><span style={{fontSize:24,fontWeight:800,letterSpacing:-.5}}><span style={{color:B.db}}>Content</span><span style={{color:B.mb}}>Gen</span></span><span style={{color:B.mg,fontWeight:400,fontSize:15}}>Revenue Model v3</span></div><div style={{fontSize:11,color:B.mdg}}>Apr 2026–Mar 2027 | 70/30 Direct/Agency | MS Partner CMO Agent (Oct '26) | Scenario: {S.l}</div><div style={{fontSize:12,color:B.red,fontWeight:600,marginTop:3}}>⚠ $0 starting cash — Odigo subsidizing burn for ~3 months</div></div>
+{/* Tabs */}
+<div style={{display:"flex",gap:3,marginBottom:10,flexWrap:"wrap"}}>{tabs.map(t=>(<button key={t.id} onClick={()=>setTab(t.id)} style={{padding:"7px 14px",fontSize:12,fontWeight:tab===t.id?700:500,borderRadius:8,cursor:"pointer",background:tab===t.id?B.wh:"transparent",color:tab===t.id?B.db:B.mg,border:tab===t.id?"2px solid "+B.lg:"2px solid transparent",boxShadow:tab===t.id?"0 1px 3px rgba(0,0,0,.06)":"none"}}>{t.l}</button>))}</div>
+{/* Scenario */}
+<div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,padding:"8px 12px",background:B.wh,borderRadius:8,border:"1px solid "+B.lg}}><span style={{fontSize:11,fontWeight:600,color:B.mdg,marginRight:4}}>Scenario:</span>{Object.entries(SC).map(([k,v])=>(<button key={k} onClick={()=>setSc(k)} style={{padding:"5px 14px",fontSize:11,fontWeight:sc===k?700:400,borderRadius:6,cursor:"pointer",background:sc===k?B.mb:B.wh,color:sc===k?B.wh:B.mdg,border:sc===k?"2px solid "+B.mb:"1px solid "+B.mlg}}>{v.l}</button>))}<span style={{fontSize:11,color:B.mg,marginLeft:8}}>{S.c} customers | {S.aa}% agent attach</span></div>
+
+{/* EXEC */}
+{tab==="exec"&&(<div style={{fontSize:13,lineHeight:1.75,color:B.dg}}>
+<Sec bg={B.wh}><h2 style={{margin:"0 0 8px",fontSize:17,fontWeight:800,color:B.db}}>Executive Summary</h2><p style={{margin:"0 0 12px",fontSize:13}}>ConteSaaS-AI generates revenue from <strong>three streams</strong>: SaaS platform subscriptions sold through Direct License and Agency Reseller channels, plus a <strong>Microsoft Partner Channel-Specific Fractional CMO Agent</strong> — an AI-powered add-on launching <strong>October 2026</strong>. Under the <strong>{S.l}</strong> scenario, the model projects <strong>{S.c} customers</strong>, <strong>{fK(d.tR)} in top-line revenue</strong>, and <strong>profitability by {d.be>=0?MS[d.be]+" 2026":"N/A"}</strong> — {d.be>=0?d.be+1:0} months after launch. The CMO Agent is AI-delivered with <strong>near-zero marginal cost</strong>.</p></Sec>
+<Sec title="Three Revenue Streams"><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+<div style={{background:B.wh,borderRadius:8,padding:12,borderLeft:"4px solid "+B.mb}}><div style={{fontWeight:700,fontSize:13,color:B.mb,marginBottom:6}}>Stream 1: SaaS Direct License</div><div style={{fontSize:12}}><strong>70%</strong> of customers. Tier 1 GTM at <strong>$5,500/yr</strong> blended.<br/><br/><strong>EOY:</strong> {d.tD}<br/><strong>12-Mo Rev:</strong> {fK(d.tSD)}<br/><strong>Available:</strong> April 2026</div></div>
+<div style={{background:B.wh,borderRadius:8,padding:12,borderLeft:"4px solid "+B.pu}}><div style={{fontWeight:700,fontSize:13,color:B.pu,marginBottom:6}}>Stream 2: SaaS Agency Reseller</div><div style={{fontSize:12}}><strong>30%</strong> at <strong>20% discount</strong> — $4,000/yr.<br/><br/><strong>EOY:</strong> {d.tA}<br/><strong>12-Mo Rev:</strong> {fK(d.tSA)}<br/><strong>Partners:</strong> Neural Impact, CARVE, Digitalzone</div></div>
+<div style={{background:B.wh,borderRadius:8,padding:12,borderLeft:"4px solid "+B.or}}><div style={{fontWeight:700,fontSize:13,color:B.or,marginBottom:6}}>Stream 3: MS Partner CMO Agent</div><div style={{fontSize:12}}><strong>AI-powered</strong> — $1,000/mo. {S.aa}% of ALL customers.<br/><br/><strong>Launch:</strong> Oct 2026<br/><strong>Clients (Mar '27):</strong> {d.mar.cAg}<br/><strong>12-Mo Rev:</strong> {fK(d.tAg)}<br/><strong>Margin:</strong> ~100%</div></div>
+</div></Sec>
+<Sec title="Scenario Comparison"><table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}><thead><tr style={{background:B.lg}}><th style={th}>Metric</th>{scData.map(s=><th key={s.key} style={{...th,fontWeight:sc===s.key?800:600,color:sc===s.key?B.mb:B.mdg}}>{s.label}</th>)}</tr></thead><tbody>
+{[{l:"EOY Customers",k:"cust",f:v=>v},{l:"Agent Attach",k:"aa",f:v=>v+"%"},{l:"Agent Clients (Mar)",k:"agCl",f:v=>v},{l:"12-Mo Revenue",k:"tR",f:fK},{l:"12-Mo EBITDA",k:"tEB",f:fK},{l:"Exit ARR",k:"arr",f:fK},{l:"Break-Even",k:"be",f:v=>v>=0?MS[v]+" '26":"N/A"}].map((r,i)=>(<tr key={i} style={{background:i%2===0?B.wh:B.altRow}}><td style={{...td,fontWeight:600}}>{r.l}</td>{scData.map(s=><td key={s.key} style={{...td,fontWeight:sc===s.key?700:400}}>{r.f(s[r.k])}</td>)}</tr>))}
+</tbody></table></Sec>
+<Sec title="Expense Assumptions"><table style={{width:"50%",borderCollapse:"collapse",fontSize:12,marginTop:4}}><tbody>
+<tr style={{background:B.altRow}}><td style={td}>Dev Team</td><td style={{...td,fontWeight:700}}>{fK(OPX.dev)}</td><td style={{...td,fontSize:11,color:B.mg}}>Mike+Josh+Lars+FE ✅</td></tr>
+<tr><td style={td}>G&A</td><td style={{...td,fontWeight:700}}>{fK(OPX.ga)}</td><td style={{...td,fontSize:11,color:B.mg}}>Forecastr ✅</td></tr>
+<tr style={{background:B.altRow}}><td style={td}>Sales & Mktg</td><td style={{...td,fontWeight:700}}>{fK(OPX.sm)}</td><td style={{...td,fontSize:11,color:B.red}}>⚠️ Assumption</td></tr>
+<tr style={{background:B.db,color:B.wh}}><td style={{...td,fontWeight:800,color:B.wh}}>Total</td><td style={{...td,fontWeight:800,color:B.wh}}>{fK(OPT)}</td><td style={{...td,color:B.wh}}></td></tr>
+</tbody></table></Sec>
+<Sec title="$20M Valuation Check" bg={B.cardBg}><div style={{fontSize:12,borderLeft:"4px solid "+B.or,paddingLeft:12}}>Exit ARR ({S.l}): <strong>{fK(d.arr)}</strong>. At 7-10x, $20M needs ~$2-2.9M ARR.<br/><strong style={{color:d.arr>=2e6?B.grn:B.red}}>{d.arr>=2e6?"✅":"⚠️"} Supports $20M at ~{(2e7/d.arr).toFixed(1)}x.</strong></div></Sec>
+<Sec title="Open Questions & Risks"><ol style={{margin:0,paddingLeft:18,fontSize:12}}><li style={{marginBottom:5}}><strong>Agent dev timeline.</strong> Oct '26 assumes 6-month build.</li><li style={{marginBottom:5}}><strong>Agent attach ({S.aa}%).</strong> No market data. Needs pilot.</li><li style={{marginBottom:5}}><strong>Agency pipeline unproven.</strong> Phase 2 not built.</li><li style={{marginBottom:5}}><strong>S&M at $5K/mo likely low.</strong></li><li style={{marginBottom:5}}><strong>Platform COGS not modeled.</strong></li><li><strong>No Odigo CMO revenue.</strong> AI agent replaces intercompany stream.</li></ol></Sec>
+</div>)}
+
+{/* DASHBOARD */}
+{tab==="dashboard"&&(<div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:10,marginBottom:16}}>
+<Cd l="EOY Customers" v={d.mar.cT} s={"Target: "+S.c} c={B.db}/><Cd l="Exit ARR" v={fK(d.arr)} s={"MRR: "+fK(d.mar.tR)} c={B.db}/><Cd l="12-Mo Revenue" v={fK(d.tR)} s={"SaaS: "+fK(d.tS)+" | Agent: "+fK(d.tAg)} c={B.mb}/><Cd l="12-Mo EBITDA" v={fK(d.tEB)} s={d.tEB>0?"Profitable":"Pre-profit"} c={d.tEB>0?B.grn:B.red}/><Cd l="Monthly OpEx" v={fK(OPT)} s="Dev+G&A+S&M" c={B.mdg}/><Cd l="Break-Even" v={d.be>=0?MS[d.be]+"'26":"N/A"} s={d.be>=0?"Month "+(d.be+1):""} c={d.be>=0?B.grn:B.red}/>
+</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
+<Sec title="MRR + Agent Revenue Growth"><div style={{display:"flex",alignItems:"flex-end",gap:3,height:bH+30}}>{d.months.map((m,i)=>{const sh=m.sT/maxR*bH,ah=m.agR/maxR*bH;return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center"}}><div style={{fontSize:8,fontWeight:700,color:B.mdg,marginBottom:2}}>{fK(m.tR)}</div><div style={{width:"100%"}}><div style={{height:ah,background:B.or,borderRadius:ah>0?"4px 4px 0 0":"0"}}/><div style={{height:sh,background:B.mb,borderRadius:ah>0?"0":"4px 4px 0 0"}}/></div><div style={{fontSize:7,color:B.mg,marginTop:3}}>{MS[i]}</div></div>);})}</div><div style={{display:"flex",gap:16,justifyContent:"center",marginTop:8}}><span style={{fontSize:11,display:"flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,background:B.mb,borderRadius:2,display:"inline-block"}}/> SaaS</span><span style={{fontSize:11,display:"flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,background:B.or,borderRadius:2,display:"inline-block"}}/> CMO Agent</span></div></Sec>
+<Sec title="Monthly EBITDA"><div style={{display:"flex",alignItems:"center",gap:3,height:bH+30,position:"relative"}}><div style={{position:"absolute",left:0,right:0,top:"50%",height:1,background:B.mlg}}/>{d.months.map((m,i)=>{const h=Math.abs(m.eb)/maxE*(bH/2),pos=m.eb>=0;return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",height:"100%",justifyContent:"center",position:"relative"}}><div style={{position:"absolute",top:pos?"calc(50% - "+(h+16)+"px)":"calc(50% + "+(h+4)+"px)",fontSize:8,fontWeight:700,color:pos?B.grn:B.red}}>{fK(m.eb)}</div><div style={{position:"absolute",...(pos?{bottom:"50%"}:{top:"50%"}),width:"70%",height:h,background:pos?B.grn:"#ef4444",borderRadius:pos?"4px 4px 0 0":"0 0 4px 4px"}}/><div style={{position:"absolute",bottom:0,fontSize:7,color:B.mg}}>{MS[i]}</div></div>);})}</div></Sec>
+</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+<Sec><div style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:B.mdg,marginBottom:8}}>Q1 ConteSaaS (Apr–Jun '26)</div><div style={{fontSize:15,fontWeight:800}}>Revenue: {fK(d.q1R)}</div><div style={{fontSize:15,fontWeight:800,color:d.q1E>0?B.grn:B.red}}>EBITDA: {fK(d.q1E)}</div><div style={{fontSize:12,color:B.mdg}}>Customers: {d.q1C} by Jun | SaaS only (agent Oct)</div></Sec>
+<Sec><div style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:B.mdg,marginBottom:8}}>Expense Breakdown</div><div style={{fontSize:13}}><strong>Dev:</strong> {fK(OPX.dev)} ✅</div><div style={{fontSize:13}}><strong>G&A:</strong> {fK(OPX.ga)} ✅</div><div style={{fontSize:13}}><strong>S&M:</strong> {fK(OPX.sm)} ⚠️</div><div style={{fontSize:13,fontWeight:700}}>Total: {fK(OPT)}/mo</div></Sec>
+</div>
+<div style={{background:B.cardBg,borderRadius:12,padding:16,marginTop:14,borderLeft:"5px solid "+B.or}}><div style={{fontSize:13,fontWeight:700,color:B.db}}>$20M Valuation Check</div><div style={{fontSize:12}}>Exit ARR: {fK(d.mar.sT*12)} SaaS + {fK(d.mar.agR*12)} Agent = {fK(d.arr)}</div><div style={{fontSize:12,fontWeight:700,color:d.arr>=2e6?B.grn:B.red}}>{d.arr>=2e6?"✅":"⚠️"} Supports $20M at ~{(2e7/d.arr).toFixed(1)}x.</div></div>
+</div>)}
+
+{/* MONTHLY P&L */}
+{tab==="monthly"&&(<div style={{overflowX:"auto"}}>
+<table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}><thead><tr style={{background:B.lg}}><th style={th}>Month</th><th style={th}>Cust</th><th style={th}>Agent</th><th style={{...th,color:B.mb}}>SaaS Dir</th><th style={{...th,color:B.pu}}>SaaS Agy</th><th style={th}>SaaS Tot</th><th style={{...th,color:B.or}}>Agent Rev</th><th style={{...th,fontWeight:800}}>Total Rev</th><th style={th}>OpEx</th><th style={{...th,fontWeight:800}}>EBITDA</th></tr></thead>
+<tbody>{d.months.map((m,i)=>(<tr key={i} style={{background:i%2===0?B.wh:B.altRow}}><td style={{...td,fontWeight:700}}>{MS[i]}</td><td style={td}>{m.cT}</td><td style={{...td,color:m.cAg>0?B.or:B.mg}}>{m.cAg>0?m.cAg:"—"}</td><td style={td}>{f$(m.sD)}</td><td style={td}>{f$(m.sA)}</td><td style={{...td,fontWeight:600}}>{f$(m.sT)}</td><td style={{...td,color:m.agR>0?B.or:B.mg,fontWeight:m.agR>0?600:400}}>{m.agR>0?f$(m.agR):"—"}</td><td style={{...td,fontWeight:700}}>{f$(m.tR)}</td><td style={{...td,color:B.mdg}}>({f$(OPT)})</td><td style={{...td,fontWeight:800,color:m.eb>=0?B.grn:B.red}}>{f$(m.eb)}</td></tr>))}
+<tr style={{background:B.db,color:B.wh}}><td style={{...td,fontWeight:800,color:B.wh}}>TOTAL</td><td style={{...td,color:B.wh}}/><td style={{...td,color:B.wh}}/><td style={{...td,color:B.wh}}>{fK(d.tSD)}</td><td style={{...td,color:B.wh}}>{fK(d.tSA)}</td><td style={{...td,fontWeight:700,color:B.wh}}>{fK(d.tS)}</td><td style={{...td,color:B.wh}}>{fK(d.tAg)}</td><td style={{...td,fontWeight:800,color:B.wh}}>{fK(d.tR)}</td><td style={{...td,color:B.wh}}>({fK(OPT*12)})</td><td style={{...td,fontWeight:800,color:B.wh}}>{fK(d.tEB)}</td></tr>
+</tbody></table>
+<div style={{fontSize:10,color:B.mg,marginTop:8}}>Direct: $5,500/yr (70%) | Agency: $4,000/yr (30%) | Agent: $1,000/mo, {S.aa}% attach, Oct '26 | OpEx: {fK(OPT)}/mo</div>
+</div>)}
+
+{/* CASH & RUNWAY */}
+{tab==="cash"&&(<div>
+<div style={{background:B.errBg,borderRadius:12,padding:16,marginBottom:14,border:"1px solid "+B.errBd}}><div style={{fontSize:13,fontWeight:700,color:B.red}}>⚠ Cash Position</div><div style={{fontSize:12,color:"#7f1d1d",marginTop:4}}>$0 starting cash. Odigo subsidizes until break-even: <strong>{d.be>=0?MS[d.be]+" '26 (Month "+(d.be+1)+")":"N/A"}</strong></div></div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:14}}><Cd l="Break-Even" v={d.be>=0?MS[d.be]:"N/A"} s={"Month "+(d.be+1)} c={B.grn}/><Cd l="Cum. Cash (12-mo)" v={fK(d.cumCash[11])} c={d.cumCash[11]>0?B.grn:B.red}/><Cd l="Max Burn" v={fK(Math.min(...d.months.map(m=>m.eb)))} s="Worst month" c={B.red}/></div>
+<table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}><thead><tr style={{background:B.lg}}><th style={th}>Month</th><th style={th}>SaaS</th><th style={th}>Agent</th><th style={th}>Total</th><th style={th}>OpEx</th><th style={th}>EBITDA</th><th style={{...th,fontWeight:800}}>Cum. Cash</th></tr></thead>
+<tbody>{d.months.map((m,i)=>(<tr key={i} style={{background:i%2===0?B.wh:B.altRow}}><td style={{...td,fontWeight:700}}>{MS[i]}</td><td style={td}>{f$(m.sT)}</td><td style={{...td,color:m.agR>0?B.or:B.mg}}>{m.agR>0?f$(m.agR):"—"}</td><td style={{...td,fontWeight:600}}>{f$(m.tR)}</td><td style={td}>({f$(OPT)})</td><td style={{...td,fontWeight:700,color:m.eb>=0?B.grn:B.red}}>{f$(m.eb)}</td><td style={{...td,fontWeight:800,color:d.cumCash[i]>=0?B.grn:B.red}}>{fK(d.cumCash[i])}</td></tr>))}</tbody></table>
+<div style={{fontSize:11,marginTop:10,background:B.warn,padding:10,borderRadius:6}}><strong>Note:</strong> Agent revenue (orange) kicks in October. Watch cumulative cash accelerate — this is the inflection point.</div>
+</div>)}
+
+{/* FOR CHRISTINE */}
+{tab==="christine"&&(<div style={{fontSize:13,lineHeight:1.75}}>
+<h3 style={{fontSize:16,fontWeight:700,marginBottom:12,color:B.db}}>For Christine — CEO Review & Decisions Needed</h3>
+{/* Customer Acquisition Chart */}
+<Sec title="Monthly New Customer Acquisitions Required">
+<div style={{display:"flex",alignItems:"flex-end",gap:4,height:bH+60}}>
+{d.months.map((m,i)=>{const dH=m.nD/maxN*bH;const aH=m.nA/maxN*bH;return(
+<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center"}}>
+<div style={{fontSize:9,fontWeight:800,color:B.dg,marginBottom:2}}>{m.nT}</div>
+<div style={{width:"100%",position:"relative"}}>
+<div style={{height:aH,background:B.pu,borderRadius:aH>0?"4px 4px 0 0":"0",display:"flex",alignItems:"center",justifyContent:"center"}}>{m.nA>0&&<span style={{fontSize:7,fontWeight:700,color:B.wh}}>{m.nA}</span>}</div>
+<div style={{height:dH,background:B.mb,borderRadius:aH>0?"0":"4px 4px 0 0",display:"flex",alignItems:"center",justifyContent:"center"}}>{m.nD>0&&<span style={{fontSize:7,fontWeight:700,color:B.wh}}>{m.nD}</span>}</div>
+</div>
+<div style={{fontSize:8,color:B.mg,marginTop:3}}>{MS[i]}</div>
+</div>);})}
+</div>
+<div style={{display:"flex",gap:16,justifyContent:"center",marginTop:8}}>
+<span style={{fontSize:11,display:"flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,background:B.mb,borderRadius:2,display:"inline-block"}}/> Direct License (70%)</span>
+<span style={{fontSize:11,display:"flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,background:B.pu,borderRadius:2,display:"inline-block"}}/> Agency Reseller (30%)</span>
+</div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginTop:12}}>
+{[{l:"Q2 (Apr-Jun)",s:0,e:3,c:B.mb},{l:"Q3 (Jul-Sep)",s:3,e:6,c:B.mb},{l:"Q4 (Oct-Dec)",s:6,e:9,c:B.or},{l:"Q1 '27 (Jan-Mar)",s:9,e:12,c:B.or}].map((q,qi)=>{
+const qNew=d.months.slice(q.s,q.e).reduce((a,m)=>a+m.nT,0);
+return(<div key={qi} style={{background:B.wh,borderRadius:6,padding:8,borderLeft:"3px solid "+q.c}}>
+<div style={{fontSize:9,fontWeight:700,color:B.mdg}}>{q.l}</div>
+<div style={{fontSize:16,fontWeight:800,color:B.db}}>{qNew} new</div>
+<div style={{fontSize:10,color:B.mg}}>~{Math.round(qNew/3)}/mo avg</div>
+</div>);})}
+</div>
+<div style={{fontSize:11,marginTop:10,background:B.warn,padding:10,borderRadius:6}}>
+<strong>The question for you:</strong> Can the sales engine deliver {d.months[0].nT} new customers in April, ramping to {d.months[11].nT} by March '27? The hockey stick assumes slow early traction accelerating as the agency channel (Phase 2) and brand awareness kick in.
+</div>
+</Sec>
+<div style={{background:B.warn,borderRadius:8,padding:14,marginBottom:14,border:"1px solid "+B.warnBd}}><div style={{fontWeight:700,marginBottom:6}}>4 Decisions That Need Your Input</div><div style={{fontSize:12}}>These affect revenue projections, break-even, and the equity restructure.</div></div>
+{[{n:"1",t:"Confirm CMO Agent Scope & October Launch",b:"Is the dev team on track for Oct '26? Every month of delay costs ~$"+Math.round(d.months[8].agR/1000)+"K in agent revenue."},{n:"2",t:"Validate the "+S.aa+"% Agent Attach Rate",b:"No market data yet. Plan a beta/pilot cohort in September to validate before full launch?"},{n:"3",t:"Validate 70/30 Direct vs Agency Split",b:"Phase 2 multi-tenant platform is Weeks 5-10 in dev brief. If agencies can't onboard until Jun/Jul, that revenue is back-loaded."},{n:"4",t:"Confirm $5K/mo S&M Budget",b:"Placeholder, likely low. Every $5K/mo increase pushes break-even ~2-3 weeks."}].map((item,i)=>(<div key={i} style={{background:B.wh,borderRadius:8,padding:14,marginBottom:10,border:"1px solid "+B.lg}}><div style={{fontWeight:700,fontSize:13,marginBottom:4}}><span style={{background:B.or,color:B.wh,borderRadius:4,padding:"2px 8px",fontSize:11,marginRight:8}}>{item.n}</span>{item.t}</div><div style={{fontSize:12,color:B.mdg}}>{item.b}</div></div>))}
+</div>)}
+
+{/* FOR MARINA */}
+{tab==="marina"&&(<div style={{fontSize:13,lineHeight:1.75}}>
+<h3 style={{fontSize:16,fontWeight:700,marginBottom:12,color:B.db}}>For Marina — Forecastr Integration Brief</h3>
+<div style={{background:B.warn,borderRadius:8,padding:14,marginBottom:14,border:"1px solid "+B.warnBd}}><div style={{fontWeight:700,marginBottom:6}}>🔑 6 Action Items for Thursday's Finance Call</div></div>
+{[{n:"1",t:"Build Three Revenue Streams in Forecastr",b:"Direct: $5,500/yr, 70% of "+S.c+" ("+d.tD+"). Agency: $4,000/yr, 30% ("+d.tA+"). Agent: $1,000/mo, "+S.aa+"% of ALL, Oct '26 start."},{n:"2",t:"Model Agent with October Start",b:"Zero revenue months 1-6. At launch, existing installed base converts at "+S.aa+"% plus new monthly additions."},{n:"3",t:"Benchmark: AI Agent Upsell Rates",b:"Using "+S.aa+"%. What benchmarks exist for AI add-on adoption? Also check Forecastr's own Fractional CFO attach rate."},{n:"4",t:"Confirm Alignment",b:"Do base SaaS numbers match existing ConteSaaS Forecastr scenario? Flag discrepancies before Thursday."},{n:"5",t:"Validate Hockey Stick Ramp",b:"~"+d.months[0].nT+"/mo (Apr) to ~"+d.months[11].nT+"/mo (Mar '27). Match SaaS startup benchmarks?"},{n:"6",t:"Break-Even Sensitivity",b:S.l+": "+(d.be>=0?MS[d.be]:"")+" at $78.3K/mo OpEx. Model at $85K, $95K, $110K. Also: what if agent delays to Dec '26?"}].map((item,i)=>(<div key={i} style={{background:B.wh,borderRadius:8,padding:14,marginBottom:10,border:"1px solid "+B.lg}}><div style={{fontWeight:700,fontSize:13,marginBottom:4}}><span style={{background:B.db,color:B.wh,borderRadius:4,padding:"2px 8px",fontSize:11,marginRight:8}}>{item.n}</span>{item.t}</div><div style={{fontSize:12,color:B.mdg}}>{item.b}</div></div>))}
+</div>)}
+
+</div>);}
+ReactDOM.render(<App/>,document.getElementById("root"));
+</script>
+</body>
+</html>
